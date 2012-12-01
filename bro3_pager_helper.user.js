@@ -1,17 +1,19 @@
 // ==UserScript==
 // @name bro3_pager_helper
 // @namespace https://github.com/5zen/
-// @version 0.1
+// @version 2012.12.01
 // @description ブラウザ三国志 ページリンク修正
 // @match http://*.3gokushi.jp/union/index.php*
 // @match http://*.3gokushi.jp/card/deck.php*
 // @match http://*.3gokushi.jp/card/trade_card.php*
+// @match http://*.3gokushi.jp/union/*
 // @require http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js
 // @copyright gozensan
 // ==/UserScript==
 
 // 2012.11.30	リリース
 // 2012.12.01	合成・トレード時の表示を変更
+//              修行・LVUP・削除・ラベル選択・表示カードの種類 の 処理を追加
 
 jQuery.noConflict();
 j$ = jQuery;
@@ -52,22 +54,25 @@ if (location.pathname == "/card/deck.php") {
 	} else {
 		nowLabel = 0;
 	}
-
-	addLink = '<ul class="pager">';
+	addLink = '<div align=center><ul class="pager">';
 	for ( var i=1; i <= maxPage; i++){
 		if (i == nowPage) {
 			addLink += '&nbsp&nbsp<b>' + i + '</b>&nbsp&nbsp';
 		} else {
-			addLink += '<li><a title=" ' + i + '" href="/card/deck.php?p=' + i + '&l=' + nowLabel + '#file-1">&nbsp' + i + '&nbsp</a></li>';
-		}
+			if ( (i < nowPage + 3) && (i > nowPage - 3) ) {
+				addLink += '<li><a  href="/card/deck.php?p=' + i + '#filetop">&nbsp&nbsp' + i + '&nbsp&nbsp</a></li>';
+			} else {
+				addLink += '<li><a href="/card/deck.php?p=' + i + '#filetop"><span onmouseover="this.textContent =\'' + '　' + i + '　\'" onmouseout="this.textContent =\'　　\'">　　</span></a></li>';
+			}
 
-		if (i == 12 || i== 24) {
-			addLink += '<br>';
 		}
 	}
-	addLink += '</ul>';
+	addLink += '</ul></div>';
 
 	// ページャーの追加 ================================================================================================================
+	GM_addStyle("#rotate div.rotateInfo ul.pager	{ background: none repeat scroll 0 center transparent; clear: none; float: right; line-height: 2; margin: 5px 0px 3px 10px; padding: 0; text-align: right; width: 920px; }");	// 本拠地
+	GM_addStyle("#rotate div.rotateInfo ul.pager li a {    padding: 3px 0px !important; }");
+
 	// すべて
 	var addHTML = xpath('//div[@class="rotateInfo clearfix label-all-color-inner"]', document);
 	if (addHTML.snapshotLength) {
@@ -115,7 +120,7 @@ if (location.pathname == "/card/deck.php") {
 
 }
 
-if ( (location.pathname == "/union/index.php") || (location.pathname == "/card/trade_card.php") ) {
+if ( (location.pathname == "/union/index.php") || (location.pathname == "/card/trade_card.php") || (location.pathname == "/union/learn.php") || (location.pathname == "/union/lvup.php") || (location.pathname == "/union/expup.php") || (location.pathname == "/union/remove.php")) {
 
 	addLink = '<div id="card_uraomote-omote"><ul class="pager">';
 	maxPage = 33;
@@ -140,22 +145,52 @@ if ( (location.pathname == "/union/index.php") || (location.pathname == "/card/t
 		maxPage = parseInt(RegExp.$1);
 	}
 
+	// 合成カード選択
+	if (location.search.match(/cid=(\d+)/) != null) {
+		location.search.match(/cid=(\d+)/);
+		cardNo = parseInt(RegExp.$1);
+	} else {
+		cardNo = 0;
+	}
+
+	// ラベル設定絞込み
+	var labelNodc = xpath('//form[@id="union_card_label_form"]/p/select/option[@selected="selected"]', document);
+	if (labelNodc.snapshotLength) {
+		labelNo = parseInt(labelNodc.snapshotItem(0).value);
+	}
+
+	// 合成可能カード絞込み
+	var unionNodc = xpath('//form[@id="union_card_select_form"]/p/select/option[@selected="selected"]', document);
+	if (unionNodc.snapshotLength) {
+		unionNo = parseInt(unionNodc.snapshotItem(0).value);
+	}
+
 	for ( var i=1; i <= maxPage; i++){
 		if (i == nowPage) {
-			addLink += '&nbsp&nbsp<li><b>' + i + '</b></li>&nbsp&nbsp';
+			addLink += '&nbsp<li><b>' + i + '</b></li>&nbsp';
 		} else {
+			// 合成元カード選択
 			if (location.pathname == "/union/index.php") {
 				if ( (i < nowPage + 4) && (i > nowPage - 4) ) {
-					addLink += '<li><a title=" ' + i + '" href="/union/index.php?union_card_select=0&p=' + i + '#filetop">&nbsp' + i + '&nbsp</a></li>';
+					addLink += '<li><a href="/union/index.php?union_card_select=' + unionNo + '&p=' + i + '&label=' + labelNo + '#filetop">&nbsp&nbsp' + i + '&nbsp&nbsp</a></li>';
 				} else {
-					addLink += '<li><a title=" ' + i + '" href="/union/index.php?union_card_select=0&p=' + i + '#filetop">&nbsp<span class="popup">&nbsp' + i + '&nbsp</span></a></li>';
+					addLink += '<li><a href="/union/index.php?union_card_select=' + unionNo + '&p=' + i + '&label=' + labelNo + '#filetop"><span onmouseover="this.textContent =\'' + ' ' + i + '&nbsp\'" onmouseout="this.textContent =\'&nbsp&nbsp\'">&nbsp&nbsp</span></a></li>';
 				}
 			}
+			// トレード
 			if (location.pathname == "/card/trade_card.php") {
 				if ( (i < nowPage + 4) && (i > nowPage - 4) ) {
-					addLink += '<li><a title=" ' + i + '" href="/card/trade_card.php?p=' + i + '#filetop">&nbsp' + i + '&nbsp</a></li>';
+					addLink += '<li><a  href="/card/trade_card.php?p=' + i + '#filetop">&nbsp&nbsp' + i + '&nbsp&nbsp</a></li>';
 				} else {
-					addLink += '<li><a title=" ' + i + '" href="/card/trade_card.php?p=' + i + '#filetop">&nbsp<span class="popup">&nbsp' + i + '&nbsp</span></a></li>';
+					addLink += '<li><a href="/card/trade_card.php?p=' + i + '#filetop"><span onmouseover="this.textContent =\'' + ' ' + i + '&nbsp\'" onmouseout="this.textContent =\'&nbsp&nbsp\'">&nbsp&nbsp</span></a></li>';
+				}
+			}
+			// 合成・修行・LVUP・削除用カード選択
+			if ( (location.pathname == "/union/learn.php") || (location.pathname == "/union/lvup.php") || (location.pathname == "/union/expup.php") || (location.pathname == "/union/remove.php") ) {
+				if ( (i < nowPage + 4) && (i > nowPage - 4) ) {
+					addLink += '<li><a href="' + location.pathname + '?cid=' + cardNo + '&p=' + i + '&label=' + labelNo + '#filetop">&nbsp&nbsp' + i + '&nbsp&nbsp</a></li>';
+				} else {
+					addLink += '<li><a href="' + location.pathname + '?cid=' + cardNo + '&p=' + i + '&label=' + labelNo + '#filetop"><span onmouseover="this.textContent =\'' + ' ' + i + '&nbsp\'" onmouseout="this.textContent =\'&nbsp&nbsp\'">&nbsp&nbsp</span></a></li>';
 				}
 			}
 		}
@@ -164,11 +199,7 @@ if ( (location.pathname == "/union/index.php") || (location.pathname == "/card/t
 
 	// ページャーの追加 ================================================================================================================
 	GM_addStyle("#rotate div.rotateInfo ul.pager	{ background: none repeat scroll 0 center transparent; clear: none; float: none; line-height: 2; margin: 0; padding: 0; text-align: right; width: 420px; }");	// 本拠地
-	GM_addStyle("ul.pager li a			{ background: none repeat scroll 0 0 #666666;    color: #FFFFFF !important;    padding: 3px 4px;    text-decoration: none !important;}");
-
-	GM_addStyle(".popup		 		{ display: none; position: absolute; top: -2em; left: -0.2em; }");
-	GM_addStyle("ul.pager li a:hover 		{ position:relative; text-decoration:none; }");
-	GM_addStyle("ul.pager li a:hover .popup		{ display: block; background-color: #666666; padding:3px; color:#ffffff; border-top:#ffffff solid 0px; border-left:#e79221 solid 0px; }");
+	GM_addStyle("ul.pager li a			{ background: none repeat scroll 0 0 #666666;    color: #FFFFFF !important;    padding: 3px 0px;    text-decoration: none !important;}");
 
 	j$("#card_uraomote-omote").after(addLink);
 }
