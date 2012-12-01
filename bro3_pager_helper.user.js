@@ -14,7 +14,8 @@
 // 2012.11.30	リリース
 // 2012.12.01	合成・トレード時の表示を変更
 //              修行・LVUP・削除・ラベル選択・表示カードの種類 の 処理を追加
-
+//		デュエルのカード選択処理部分を追加
+//		生贄選択のページのみはJavascriptのため諦めました。
 jQuery.noConflict();
 j$ = jQuery;
 
@@ -54,15 +55,16 @@ if (location.pathname == "/card/deck.php") {
 	} else {
 		nowLabel = 0;
 	}
+
 	addLink = '<div align=center><ul class="pager">';
 	for ( var i=1; i <= maxPage; i++){
 		if (i == nowPage) {
 			addLink += '&nbsp&nbsp<b>' + i + '</b>&nbsp&nbsp';
 		} else {
 			if ( (i < nowPage + 3) && (i > nowPage - 3) ) {
-				addLink += '<li><a  href="/card/deck.php?p=' + i + '#filetop">&nbsp&nbsp' + i + '&nbsp&nbsp</a></li>';
+				addLink += '<li><a  href="/card/deck.php?p=' + i + '&l=' + nowLabel + '#filetop">&nbsp&nbsp' + i + '&nbsp&nbsp</a></li>';
 			} else {
-				addLink += '<li><a href="/card/deck.php?p=' + i + '#filetop"><span onmouseover="this.textContent =\'' + '　' + i + '　\'" onmouseout="this.textContent =\'　　\'">　　</span></a></li>';
+				addLink += '<li><a href="/card/deck.php?p=' + i + '&l=' + nowLabel + '#filetop"><span onmouseover="this.textContent =\'' + '　' + i + '　\'" onmouseout="this.textContent =\'　　\'">　　</span></a></li>';
 			}
 
 		}
@@ -120,7 +122,8 @@ if (location.pathname == "/card/deck.php") {
 
 }
 
-if ( (location.pathname == "/union/index.php") || (location.pathname == "/card/trade_card.php") || (location.pathname == "/union/learn.php") || (location.pathname == "/union/lvup.php") || (location.pathname == "/union/expup.php") || (location.pathname == "/union/remove.php")) {
+
+if ( (location.pathname == "/union/index.php") || (location.pathname == "/card/trade_card.php") || (location.pathname == "/union/learn.php") || (location.pathname == "/union/lvup.php") || (location.pathname == "/union/expup.php") || (location.pathname == "/union/remove.php") ) {
 
 	addLink = '<div id="card_uraomote-omote"><ul class="pager">';
 	maxPage = 33;
@@ -132,13 +135,14 @@ if ( (location.pathname == "/union/index.php") || (location.pathname == "/card/t
 	}
 
 	// 現在の表示ページの取得
+	var nowPage = 0;
 	var getNowPage = xpath('//ul[@class="pager"]//b', document);
 	if (getNowPage.snapshotLength) {
 		nowPage = parseInt(getNowPage.snapshotItem(0).innerHTML);
 	}
 
 	// 最終ページの取得
-	maxPage = nowPage;
+	var maxPage = nowPage;
 	var lastPage = xpath('//a[@title="last page"]', document);
 	if (lastPage.snapshotLength) {
 		lastPage.snapshotItem(0).href.match(/p=(\d+)/);
@@ -146,6 +150,7 @@ if ( (location.pathname == "/union/index.php") || (location.pathname == "/card/t
 	}
 
 	// 合成カード選択
+	var cardNo = 0;
 	if (location.search.match(/cid=(\d+)/) != null) {
 		location.search.match(/cid=(\d+)/);
 		cardNo = parseInt(RegExp.$1);
@@ -154,12 +159,14 @@ if ( (location.pathname == "/union/index.php") || (location.pathname == "/card/t
 	}
 
 	// ラベル設定絞込み
+	var unionNo = 0;
 	var labelNodc = xpath('//form[@id="union_card_label_form"]/p/select/option[@selected="selected"]', document);
 	if (labelNodc.snapshotLength) {
 		labelNo = parseInt(labelNodc.snapshotItem(0).value);
 	}
 
 	// 合成可能カード絞込み
+	var unionNo = 0;
 	var unionNodc = xpath('//form[@id="union_card_select_form"]/p/select/option[@selected="selected"]', document);
 	if (unionNodc.snapshotLength) {
 		unionNo = parseInt(unionNodc.snapshotItem(0).value);
@@ -186,6 +193,7 @@ if ( (location.pathname == "/union/index.php") || (location.pathname == "/card/t
 				}
 			}
 			// 合成・修行・LVUP・削除用カード選択
+
 			if ( (location.pathname == "/union/learn.php") || (location.pathname == "/union/lvup.php") || (location.pathname == "/union/expup.php") || (location.pathname == "/union/remove.php") ) {
 				if ( (i < nowPage + 4) && (i > nowPage - 4) ) {
 					addLink += '<li><a href="' + location.pathname + '?cid=' + cardNo + '&p=' + i + '&label=' + labelNo + '#filetop">&nbsp&nbsp' + i + '&nbsp&nbsp</a></li>';
