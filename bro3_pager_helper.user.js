@@ -10,6 +10,9 @@
 // @copyright gozensan
 // ==/UserScript==
 
+// 2012.11.30	リリース
+// 2012.12.01	合成・トレード時の表示を変更
+
 jQuery.noConflict();
 j$ = jQuery;
 
@@ -142,16 +145,18 @@ if ( (location.pathname == "/union/index.php") || (location.pathname == "/card/t
 			addLink += '&nbsp&nbsp<li><b>' + i + '</b></li>&nbsp&nbsp';
 		} else {
 			if (location.pathname == "/union/index.php") {
-				addLink += '<li><a title=" ' + i + '" href="/union/index.php?union_card_select=0&p=' + i + '#filetop">&nbsp' + i + '&nbsp</a></li>';
+				if ( (i < nowPage + 4) && (i > nowPage - 4) ) {
+					addLink += '<li><a title=" ' + i + '" href="/union/index.php?union_card_select=0&p=' + i + '#filetop">&nbsp' + i + '&nbsp</a></li>';
+				} else {
+					addLink += '<li><a title=" ' + i + '" href="/union/index.php?union_card_select=0&p=' + i + '#filetop">&nbsp<span class="popup">&nbsp' + i + '&nbsp</span></a></li>';
+				}
 			}
 			if (location.pathname == "/card/trade_card.php") {
-				addLink += '<li><a title=" ' + i + '" href="/card/trade_card.php?p=' + i + '#filetop">&nbsp' + i + '&nbsp</a></li>';
-			}
-		}
-
-		if (maxPage > 20) {
-			if (i == Math.round(maxPage / 2)) {
-				addLink += '<br><br>';
+				if ( (i < nowPage + 4) && (i > nowPage - 4) ) {
+					addLink += '<li><a title=" ' + i + '" href="/card/trade_card.php?p=' + i + '#filetop">&nbsp' + i + '&nbsp</a></li>';
+				} else {
+					addLink += '<li><a title=" ' + i + '" href="/card/trade_card.php?p=' + i + '#filetop">&nbsp<span class="popup">&nbsp' + i + '&nbsp</span></a></li>';
+				}
 			}
 		}
 	}
@@ -160,6 +165,10 @@ if ( (location.pathname == "/union/index.php") || (location.pathname == "/card/t
 	// ページャーの追加 ================================================================================================================
 	GM_addStyle("#rotate div.rotateInfo ul.pager	{ background: none repeat scroll 0 center transparent; clear: none; float: none; line-height: 2; margin: 0; padding: 0; text-align: right; width: 420px; }");	// 本拠地
 	GM_addStyle("ul.pager li a			{ background: none repeat scroll 0 0 #666666;    color: #FFFFFF !important;    padding: 3px 4px;    text-decoration: none !important;}");
+
+	GM_addStyle(".popup		 		{ display: none; position: absolute; top: -2em; left: -0.2em; }");
+	GM_addStyle("ul.pager li a:hover 		{ position:relative; text-decoration:none; }");
+	GM_addStyle("ul.pager li a:hover .popup		{ display: block; background-color: #666666; padding:3px; color:#ffffff; border-top:#ffffff solid 0px; border-left:#e79221 solid 0px; }");
 
 	j$("#card_uraomote-omote").after(addLink);
 }
