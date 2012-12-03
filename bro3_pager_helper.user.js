@@ -1,11 +1,9 @@
 // ==UserScript==
 // @name bro3_pager_helper
 // @namespace https://github.com/5zen/
-// @version 2012.12.01
+// @version 2012.12.03
 // @description ブラウザ三国志 ページリンク修正
-// @match http://*.3gokushi.jp/union/index.php*
-// @match http://*.3gokushi.jp/card/deck.php*
-// @match http://*.3gokushi.jp/card/trade_card.php*
+// @match http://*.3gokushi.jp/card/*
 // @match http://*.3gokushi.jp/union/*
 // @require http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js
 // @copyright gozensan
@@ -14,15 +12,16 @@
 // 2012.11.30	リリース
 // 2012.12.01	合成・トレード時の表示を変更
 //              修行・LVUP・削除・ラベル選択・表示カードの種類 の 処理を追加
+// 2012.12.03	生贄選択のページ部分の作成
 //		デュエルのカード選択処理部分を追加
-//		生贄選択のページのみはJavascriptのため諦めました。
+
 jQuery.noConflict();
 j$ = jQuery;
 
 HOST = location.hostname;
 
 
-if (location.pathname == "/card/deck.php") {
+if ( (location.pathname == "/card/deck.php") || (location.pathname == "/card/duel_set.php") ) {
 
 	// 初期値
 	maxPage = 33;
@@ -59,12 +58,12 @@ if (location.pathname == "/card/deck.php") {
 	addLink = '<div align=center><ul class="pager">';
 	for ( var i=1; i <= maxPage; i++){
 		if (i == nowPage) {
-			addLink += '&nbsp&nbsp<b>' + i + '</b>&nbsp&nbsp';
+			addLink += '&nbsp;&nbsp;<b>' + i + '</b>&nbsp;&nbsp;';
 		} else {
 			if ( (i < nowPage + 3) && (i > nowPage - 3) ) {
-				addLink += '<li><a  href="/card/deck.php?p=' + i + '&l=' + nowLabel + '#filetop">&nbsp&nbsp' + i + '&nbsp&nbsp</a></li>';
+				addLink += '<li><a href="/card/deck.php?p=' + i + '&l=' + nowLabel + '#filetop">&nbsp;&nbsp;' + i + '&nbsp;&nbsp;</a></li>';
 			} else {
-				addLink += '<li><a href="/card/deck.php?p=' + i + '&l=' + nowLabel + '#filetop"><span onmouseover="this.textContent =\'' + '　' + i + '　\'" onmouseout="this.textContent =\'　　\'">　　</span></a></li>';
+				addLink += '<li><a href="/card/deck.php?p=' + i + '&l=' + nowLabel + '#filetop"><span onmouseover="this.textContent =\'' + '&nbsp;' + i + '&nbsp;\'" onmouseout="this.textContent =\'&nbsp;&nbsp;\'">&nbsp;&nbsp;</span></a></li>';
 			}
 
 		}
@@ -119,11 +118,20 @@ if (location.pathname == "/card/deck.php") {
 		addHTML.snapshotItem(0).innerHTML += addLink;
 	}
 
+	// 武将デュエルセット
+	var addHTML = xpath('//div[@class="rotateInfo clearfix"]', document);
+	if (addHTML.snapshotLength) {
+		addHTML.snapshotItem(0).innerHTML += addLink;
+	}
+	var addHTML = xpath('//div[@class="rotateInfo bottom clearfix"]', document);
+	if (addHTML.snapshotLength) {
+		addHTML.snapshotItem(0).innerHTML += addLink;
+	}
 
 }
 
 
-if ( (location.pathname == "/union/index.php") || (location.pathname == "/card/trade_card.php") || (location.pathname == "/union/learn.php") || (location.pathname == "/union/lvup.php") || (location.pathname == "/union/expup.php") || (location.pathname == "/union/remove.php") ) {
+if ( (location.pathname == "/union/index.php") || (location.pathname == "/card/trade_card.php") || (location.pathname == "/union/learn.php") || (location.pathname == "/union/lvup.php") || (location.pathname == "/union/expup.php") || (location.pathname == "/union/remove.php") || (location.pathname == "/union/add_lv.php") ) {
 
 	addLink = '<div id="card_uraomote-omote"><ul class="pager">';
 	maxPage = 33;
@@ -143,12 +151,29 @@ if ( (location.pathname == "/union/index.php") || (location.pathname == "/card/t
 
 	// 最終ページの取得
 	var maxPage = nowPage;
-	var lastPage = xpath('//a[@title="last page"]', document);
-	if (lastPage.snapshotLength) {
-		lastPage.snapshotItem(0).href.match(/p=(\d+)/);
-		maxPage = parseInt(RegExp.$1);
+	if (location.pathname == "/union/add_lv.php") {
+		// スキルLvup時の追加生贄カード選択画面処理
+		var lastPage = xpath('//ul[@class="pager"]/li[@class="last"]', document);
+		if (lastPage.snapshotLength) {
+			lastPage.snapshotItem(0).innerHTML.match(/input.name = &quot;p&quot;; input.value = &quot;(\d+)/g);
+			maxPage = parseInt(RegExp.$1);
+		}
+		// リンク用URL作成部分
+		var urlStr = xpath('//ul[@class="pager"]', document);
+		if (urlStr.snapshotLength) {
+			var t1 = urlStr.snapshotItem(0).innerHTML.split("<li><a href=");
+			var t2 = t1[1].split(" title=");
+			var t3 = t2[0].split(" input.name = &quot;p&quot;; input.value = &quot;");
+			var t4 = t3[1].split("&quot;;");
+		}
+	} else {
+		// 通常の最終ページ取得
+		var lastPage = xpath('//a[@title="last page"]', document);
+		if (lastPage.snapshotLength) {
+			lastPage.snapshotItem(0).href.match(/p=(\d+)/);
+			maxPage = parseInt(RegExp.$1);
+		}
 	}
-
 	// 合成カード選択
 	var cardNo = 0;
 	if (location.search.match(/cid=(\d+)/) != null) {
@@ -179,26 +204,33 @@ if ( (location.pathname == "/union/index.php") || (location.pathname == "/card/t
 			// 合成元カード選択
 			if (location.pathname == "/union/index.php") {
 				if ( (i < nowPage + 4) && (i > nowPage - 4) ) {
-					addLink += '<li><a href="/union/index.php?union_card_select=' + unionNo + '&p=' + i + '&label=' + labelNo + '#filetop">&nbsp&nbsp' + i + '&nbsp&nbsp</a></li>';
+					addLink += '<li><a href="/union/index.php?union_card_select=' + unionNo + '&p=' + i + '&label=' + labelNo + '#filetop">&nbsp;&nbsp;' + i + '&nbsp;&nbsp;</a></li>';
 				} else {
-					addLink += '<li><a href="/union/index.php?union_card_select=' + unionNo + '&p=' + i + '&label=' + labelNo + '#filetop"><span onmouseover="this.textContent =\'' + ' ' + i + '&nbsp\'" onmouseout="this.textContent =\'&nbsp&nbsp\'">&nbsp&nbsp</span></a></li>';
+					addLink += '<li><a href="/union/index.php?union_card_select=' + unionNo + '&p=' + i + '&label=' + labelNo + '#filetop"><span onmouseover="this.textContent =\'' + '&nbsp;' + i + '&nbsp;\'" onmouseout="this.textContent =\'&nbsp;&nbsp;\'">&nbsp;&nbsp;</span></a></li>';
 				}
 			}
 			// トレード
 			if (location.pathname == "/card/trade_card.php") {
 				if ( (i < nowPage + 4) && (i > nowPage - 4) ) {
-					addLink += '<li><a  href="/card/trade_card.php?p=' + i + '#filetop">&nbsp&nbsp' + i + '&nbsp&nbsp</a></li>';
+					addLink += '<li><a  href="/card/trade_card.php?p=' + i + '#filetop">&nbsp&nbsp' + i + '&nbsp;&nbsp;</a></li>';
 				} else {
-					addLink += '<li><a href="/card/trade_card.php?p=' + i + '#filetop"><span onmouseover="this.textContent =\'' + ' ' + i + '&nbsp\'" onmouseout="this.textContent =\'&nbsp&nbsp\'">&nbsp&nbsp</span></a></li>';
+					addLink += '<li><a href="/card/trade_card.php?p=' + i + '#filetop"><span onmouseover="this.textContent =\'' + ' ' + i + '&nbsp;\'" onmouseout="this.textContent =\'&nbsp;&nbsp;\'">&nbsp;&nbsp;</span></a></li>';
 				}
 			}
 			// 合成・修行・LVUP・削除用カード選択
 
 			if ( (location.pathname == "/union/learn.php") || (location.pathname == "/union/lvup.php") || (location.pathname == "/union/expup.php") || (location.pathname == "/union/remove.php") ) {
 				if ( (i < nowPage + 4) && (i > nowPage - 4) ) {
-					addLink += '<li><a href="' + location.pathname + '?cid=' + cardNo + '&p=' + i + '&label=' + labelNo + '#filetop">&nbsp&nbsp' + i + '&nbsp&nbsp</a></li>';
+					addLink += '<li><a href="' + location.pathname + '?cid=' + cardNo + '&p=' + i + '&label=' + labelNo + '#filetop">&nbsp;&nbsp;' + i + '&nbsp;&nbsp;</a></li>';
 				} else {
-					addLink += '<li><a href="' + location.pathname + '?cid=' + cardNo + '&p=' + i + '&label=' + labelNo + '#filetop"><span onmouseover="this.textContent =\'' + ' ' + i + '&nbsp\'" onmouseout="this.textContent =\'&nbsp&nbsp\'">&nbsp&nbsp</span></a></li>';
+					addLink += '<li><a href="' + location.pathname + '?cid=' + cardNo + '&p=' + i + '&label=' + labelNo + '#filetop"><span onmouseover="this.textContent =\'' + '&nbsp;' + i + '&nbsp;\'" onmouseout="this.textContent =\'&nbsp;&nbsp;\'">&nbsp;&nbsp;</span></a></li>';
+				}
+			}
+			if (location.pathname == "/union/add_lv.php") {
+				if ( (i < nowPage + 4) && (i > nowPage - 4) ) {
+					addLink += '<li><a href="' + t3[0] + ' input.name = &quot;p&quot;; input.value = &quot;' + i + '&quot;;' + t4[1] + ' title=&nbsp;&nbsp;"' + i + '&nbsp;&nbsp;">&nbsp;&nbsp;' + i + '&nbsp;&nbsp;</a></li>';
+				} else {
+					addLink += '<li><a href="' + t3[0] + ' input.name = &quot;p&quot;; input.value = &quot;' + i + '&quot;;' + t4[1] + ' title=&nbsp;&nbsp;"' + i + '&nbsp;&nbsp;"><span onmouseover="this.textContent =\'' + '&nbsp;' + i + '&nbsp;\'" onmouseout="this.textContent =\'&nbsp;&nbsp;\'">&nbsp;&nbsp;</span></a></li>';
 				}
 			}
 		}
