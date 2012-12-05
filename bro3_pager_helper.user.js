@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name bro3_pager_helper
 // @namespace https://github.com/5zen/
-// @version 2012.12.03
+// @version 2012.12.05
 // @description ブラウザ三国志 ページリンク修正
 // @match http://*.3gokushi.jp/card/*
 // @match http://*.3gokushi.jp/union/*
@@ -14,6 +14,7 @@
 //              修行・LVUP・削除・ラベル選択・表示カードの種類 の 処理を追加
 // 2012.12.03	生贄選択のページ部分の作成
 //		デュエルのカード選択処理部分を追加
+// 2012.12.05	デュエルのカード選択部分を修正
 
 jQuery.noConflict();
 j$ = jQuery;
@@ -60,12 +61,22 @@ if ( (location.pathname == "/card/deck.php") || (location.pathname == "/card/due
 		if (i == nowPage) {
 			addLink += '&nbsp;&nbsp;<b>' + i + '</b>&nbsp;&nbsp;';
 		} else {
-			if ( (i < nowPage + 3) && (i > nowPage - 3) ) {
-				addLink += '<li><a href="/card/deck.php?p=' + i + '&l=' + nowLabel + '#filetop">&nbsp;&nbsp;' + i + '&nbsp;&nbsp;</a></li>';
-			} else {
-				addLink += '<li><a href="/card/deck.php?p=' + i + '&l=' + nowLabel + '#filetop"><span onmouseover="this.textContent =\'' + '&nbsp;' + i + '&nbsp;\'" onmouseout="this.textContent =\'&nbsp;&nbsp;\'">&nbsp;&nbsp;</span></a></li>';
+			// デッキ
+			if (location.pathname == "/card/deck.php") {
+				if ( (i < nowPage + 3) && (i > nowPage - 3) ) {
+					addLink += '<li><a href="/card/deck.php?p=' + i + '&l=' + nowLabel + '#filetop">&nbsp;&nbsp;' + i + '&nbsp;&nbsp;</a></li>';
+				} else {
+					addLink += '<li><a href="/card/deck.php?p=' + i + '&l=' + nowLabel + '#filetop"><span onmouseover="this.textContent =\'' + '&nbsp;' + i + '&nbsp;\'" onmouseout="this.textContent =\'&nbsp;&nbsp;\'">&nbsp;&nbsp;</span></a></li>';
+				}
 			}
-
+			// デュエルセット
+			if (location.pathname == "/card/duel_set.php") {
+				if ( (i < nowPage + 3) && (i > nowPage - 3) ) {
+					addLink += '<li><a href="/card/duel_set.php?p=' + i + '&l=' + nowLabel + '#filetop">&nbsp;&nbsp;' + i + '&nbsp;&nbsp;</a></li>';
+				} else {
+					addLink += '<li><a href="/card/duel_set.php?p=' + i + '&l=' + nowLabel + '#filetop"><span onmouseover="this.textContent =\'' + '&nbsp;' + i + '&nbsp;\'" onmouseout="this.textContent =\'&nbsp;&nbsp;\'">&nbsp;&nbsp;</span></a></li>';
+				}
+			}
 		}
 	}
 	addLink += '</ul></div>';
